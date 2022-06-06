@@ -1,8 +1,10 @@
-import { monthMap, weekMap, chatOptions } from './utils';
+import { monthMap, weekMap, chatOptions } from './utils.js';
 
-const TelegramApi = require('node-telegram-bot-api');
-const CronJob = require('cron').CronJob;
-require('dotenv').config();
+import TelegramApi from 'node-telegram-bot-api';
+import { CronJob } from 'cron';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const token = process.env.TELEGRAM_TOKEN;
 
@@ -18,32 +20,37 @@ const getCurrDate = () => {
 };
 
 const createPoll = (chatId) => {
-  const dateSec = 86400;
   const question = `Сегодня ${getCurrDate()} я сделала...`;
 
   bot.sendPoll(chatId, question, chatOptions, {
     is_anonymous: false,
     type: 'regular',
     allows_multiple_answers: true,
-    open_period: 2 * dateSec, // two days
   });
 };
 
-// bot.onText(/\/poll/, (msg) => {
-//   createPoll(msg.chat.id);
+// bot.onText(/\/poll/, (msg) => { // for test
+//   const chatId = msg.chat.id;
+
+//   createPoll(chatId);
 // });
 
 const job = new CronJob(
-  '0 22 * * *',
+  '0 16 * * *',
   () => {
-    createPoll();
+    createPoll(process.env.TEST_CHAT_ID);
   },
   null,
   true,
-  'America/Los_Angeles'
+  ''
 );
 
 bot.onText(/\/start/, function (msg) {
-    if (config.bot.users.indexOf(msg.from.id) == -1) return;
     const chatId = msg.chat.id;
-  });
+    const reply = 'Привет, я бот для отображения полезностей в фитнес чате';
+    bot.sendMessage(chatId, reply);
+
+    console.log('chatId', chatId);
+});
+
+job.start();
