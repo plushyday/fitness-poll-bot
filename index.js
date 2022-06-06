@@ -17,7 +17,7 @@ const getCurrDate = () => {
   const date = new Date();
   const day = date.getDate();
   const weekDay = weekMap[date.getDay()];
-  const month = monthMap[date.getMonth()];
+  const month = monthMap[date.getMonth() + 1];
 
   return `(${weekDay} ${day} ${month})`;
 };
@@ -32,14 +32,14 @@ const createPoll = async (chatId) => {
   });
 };
 
-bot.onText(/\/poll/, (msg) => { // for test
-  const chatId = msg.chat.id;
+// bot.onText(/\/poll/, (msg) => { // for test
+//   const chatId = msg.chat.id;
 
-  createPoll(chatId);
-});
+//   createPoll(chatId);
+// });
 
 new CronJob(
-  '0 22 * * *',
+  '30 22 * * *',
   async () => {
     const chatIdsObj = await dbClient.get(CHAT_ID);
     for (key in chatIdsObj) {
@@ -53,7 +53,8 @@ new CronJob(
     }
   },
   null,
-  true
+  true,
+  'Europe/Vilnius'
 );
 
 bot.onText(/\/start/, async function(msg) {
