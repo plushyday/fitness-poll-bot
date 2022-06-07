@@ -25,29 +25,33 @@ const getCurrDate = () => {
 const createPoll = async (chatId) => {
   const question = `Сегодня ${getCurrDate()} я...`;
 
-  await bot.sendPoll(chatId, question, chatOptions, {
+  const pollObj = await bot.sendPoll(chatId, question, chatOptions, {
     is_anonymous: false,
     type: 'regular',
     allows_multiple_answers: true,
   });
+
+  return pollObj.message_id;
 };
 
-// bot.onText(/\/poll/, (msg) => { // for test
-//   const chatId = msg.chat.id;
+bot.onText(/\/poll/, async (msg) => { // for test
+  const chatId = msg.chat.id;
 
-//   createPoll(chatId);
-// });
+  const mssgId = await createPoll(chatId);
+  await bot.pinChatMessage(chatId, mssgId, true)
+});
 
 new CronJob(
   '30 22 * * *',
   async () => {
     const chatIdsObj = await dbClient.get(CHAT_ID);
-    for (key in chatIdsObj) {
+    for (chatId in chatIdsObj) {
       try {
-        await createPoll(key);
+        const mssgId = await createPoll(chatId);
+        await bot.pinChatMessage(chatId, mssgId, true);
       }
       catch (err) {
-        delete chatIdsObj[key];
+        delete chatIdsObj[chatId];
         await dbClient.set(CHAT_ID, chatIdsObj);
       }
     }
