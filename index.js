@@ -17,7 +17,7 @@ const getCurrDate = () => {
   const date = new Date();
   const day = date.getDate();
   const weekDay = weekMap[date.getDay()];
-  const month = monthMap[date.getMonth() + 1];
+  const month = monthMap[date.getMonth()];
 
   return `(${weekDay} ${day} ${month})`;
 };
@@ -38,7 +38,7 @@ bot.onText(/\/poll/, async (msg) => { // for test
   const chatId = msg.chat.id;
 
   const mssgId = await createPoll(chatId);
-  await bot.pinChatMessage(chatId, mssgId, true)
+  await bot.pinChatMessage(chatId, mssgId)
 });
 
 new CronJob(
@@ -48,11 +48,14 @@ new CronJob(
     for (chatId in chatIdsObj) {
       try {
         const mssgId = await createPoll(chatId);
-        await bot.pinChatMessage(chatId, mssgId, true);
+        await bot.pinChatMessage(chatId, mssgId);
       }
       catch (err) {
-        delete chatIdsObj[chatId];
-        await dbClient.set(CHAT_ID, chatIdsObj);
+        if (err.code === 'ETELEGRAM') {
+          delete chatIdsObj[chatId];
+          await dbClient.set(CHAT_ID, chatIdsObj);
+        }
+      console.log('err', err);
       }
     }
   },
@@ -64,11 +67,12 @@ new CronJob(
 bot.onText(/\/start/, async function(msg) {
   const chatId = msg.chat.id;
   let dbSet = await dbClient.get(CHAT_ID);
-  if (Object.keys(dbSet).length !== 0) {
+  console.log('dbSet', dbSet);
+  if (dbSet && Object.keys(dbSet).length !== 0) {
     dbSet[chatId] = chatId;
   }
   else {
-    dbSet = { [dbSet]: dbSet }
+    dbSet = { [chatId]: dbSet }
   }
   await dbClient.set(CHAT_ID, dbSet);
 
@@ -84,3 +88,7 @@ bot.onText(/\/dbdump/, async function(msg) {
   let dbSet = await dbClient.getAll();
   console.log('dbSet', dbSet);
 });
+
+// bot.onText(/\/clearAll/, async function(msg) {
+//   await dbClient.delete(CHAT_ID)
+// });
